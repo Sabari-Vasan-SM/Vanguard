@@ -1,24 +1,34 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock authentication - store user role
-    const role = credentials.username.toLowerCase().includes('admin') ? 'admin' : 
-                 credentials.username.toLowerCase().includes('logistics') ? 'logistics' : 'commander';
-    
-    localStorage.setItem('userRole', role);
-    localStorage.setItem('userName', credentials.username);
-    navigate('/dashboard');
+    try {
+      const res = await axios.post('http://localhost:5000/api/auth', credentials);
+      localStorage.setItem('token', res.data.token);
+      // You might want to fetch user data here and store role
+      // For now, we'll just navigate
+      navigate('/dashboard');
+    } catch (err) {
+      toast({
+        title: 'Login Failed',
+        description: 'Invalid credentials. Please try again.',
+        variant: 'destructive',
+      });
+      console.error(err);
+    }
   };
 
   return (
@@ -41,12 +51,12 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Username</label>
+              <label className="text-sm font-medium">Email</label>
               <Input
-                type="text"
-                placeholder="Enter your username"
-                value={credentials.username}
-                onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+                type="email"
+                placeholder="Enter your email"
+                value={credentials.email}
+                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                 className="bg-input border-border"
                 required
               />
@@ -83,13 +93,8 @@ const Login = () => {
 
           <div className="mt-6 pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground text-center">
-              Demo Accounts:
+              To register, please contact an administrator.
             </p>
-            <div className="mt-2 space-y-1 text-xs text-center">
-              <div>Admin: <span className="text-primary">admin / password</span></div>
-              <div>Logistics: <span className="text-secondary">logistics / password</span></div>
-              <div>Commander: <span className="text-accent">commander / password</span></div>
-            </div>
           </div>
         </CardContent>
       </Card>
